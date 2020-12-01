@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+    <Properties>
+        <Property name="base.log.dir">./target/logs</Property>
+        <Property name="appenderPatternLayout">[%t] %d{dd MMM yyyy HH:mm:ss,SSSZ}{UTC} %-5p %c [%X]: %m%ex%n</Property>
+        <!-- You can adjust this based on how log files will be accessed. 10 MB is a decent size that you can open in Vi editor or other text editor tools -->
+        <Property name="maxLogFileSize">10 MB</Property>
+        <!-- You can increase this based on how much log you need per application instance(container) and what is the logging rate for the API -->
+        <Property name="maxLogFiles">50</Property>
+        <Property name="CAP1_LOGLEVEL">DEBUG</Property>
+        <Property name="PERF_LOGLEVEL">INFO</Property>
+        <Property name="ROOT_LOGLEVEL">DEBUG</Property>
+        <Property name="MICRO_LOGLEVEL">${MICRO_LOGLEVEL:-INFO}</Property>
+        <Property name="PROFILE_LOGLEVEL">DEBUG</Property>
+    </Properties>
+    <Appenders>
+        <RollingRandomAccessFile name="APPLOGFILE" fileName="${base.log.dir}/app.log"
+                                 filePattern="${base.log.dir}/$${date:yyyy-MM}/app-%d{MM-dd-yyyy}-%i.log.gz"
+                                 append="true">
+            <PatternLayout pattern="${appenderPatternLayout}"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="${maxLogFileSize}"/>
+            </Policies>
+            <DefaultRolloverStrategy max="${maxLogFiles}"/>
+        </RollingRandomAccessFile>
+        <RollingRandomAccessFile name="SYSLOGFILE" fileName="${base.log.dir}/sys.log"
+                                 filePattern="${base.log.dir}/$${date:yyyy-MM}/sys-%d{MM-dd-yyyy}-%i.log.gz"
+                                 append="true">
+            <PatternLayout pattern="${appenderPatternLayout}"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="${maxLogFileSize}"/>
+            </Policies>
+            <DefaultRolloverStrategy max="${maxLogFiles}"/>
+        </RollingRandomAccessFile>
+        <RollingRandomAccessFile name="PERFLOGFILE" fileName="${base.log.dir}/perf.log"
+                                 filePattern="${base.log.dir}/$${date:yyyy-MM}/perf-%d{MM-dd-yyyy}-%i.log.gz"
+                                 append="true">
+            <!--Adding below filter to disable logging from Chassis ApiPerfLogServletFilter -->
+            <RegexFilter regex=".*CircuitBreaker.*" onMatch="ACCEPT" onMismatch="DENY"/>
+            <PatternLayout pattern="${appenderPatternLayout}"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="${maxLogFileSize}"/>
+            </Policies>
+            <DefaultRolloverStrategy max="${maxLogFiles}"/>
+        </RollingRandomAccessFile>
+        <RollingRandomAccessFile name="WSTRACEFILE" fileName="${base.log.dir}/wstrace.log"
+                                 filePattern="${base.log.dir}/$${date:yyyy-MM}/wstrace-%d{MM-dd-yyyy}-%i.log.gz"
+                                 append="true">
+            <PatternLayout pattern="${appenderPatternLayout}"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="${maxLogFileSize}"/>
+            </Policies>
+            <DefaultRolloverStrategy max="${maxLogFiles}"/>
+        </RollingRandomAccessFile>
+        <Console name="SYSOUT" target="SYSTEM_OUT">
+            <PatternLayout pattern="${appenderPatternLayout}"/>
+        </Console>
+    </Appenders>
+    <Loggers>
+
+        <Logger name="io.micrometer.shaded.io.netty.util.Recycler" level="${sys:MICRO_LOGLEVEL}" additivity="false" includeLocation="false">
+            <AppenderRef ref="APPLOGFILE"/>
+        </Logger>
+
+        <Logger name="org.springframework" level="${sys:CAP1_LOGLEVEL}" additivity="false" includeLocation="false">
+            <AppenderRef ref="APPLOGFILE"/>
+        </Logger>
+
+        <Root level="${sys:ROOT_LOGLEVEL}" includeLocation="false">
+            <AppenderRef ref="SYSLOGFILE"/>
+            <AppenderRef ref="SYSOUT"/>
+        </Root>
+    </Loggers>
+</Configuration>
